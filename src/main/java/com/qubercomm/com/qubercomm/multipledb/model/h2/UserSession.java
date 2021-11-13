@@ -68,11 +68,5 @@ public class UserSession {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
-
-	
-	
-	
-	
 	
 }

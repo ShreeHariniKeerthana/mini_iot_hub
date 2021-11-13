@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.qubercomm.multipledb.model.postgres.Gateway;
 import com.qubercomm.service.GatewayService;
+import com.qubercomm.service.ValidationService;
 
 @RestController
 @RequestMapping("/rest/api/gateway/")
@@ -22,11 +23,18 @@ public class GatewayController {
 
 	@Autowired
 	private GatewayService gatewayService;
+	
+	@Autowired
+	private ValidationService validationService;
 
 	@RequestMapping(value = "/create", method = RequestMethod.POST)
-	public String onboardGateway(@RequestBody Gateway gateway) {
-		String result = "";
-		result = gatewayService.onboardGateway(gateway);	
+	public Map<String, Object> onboardGateway(@RequestBody Gateway gateway) {
+		Map<String, Object> result = new HashMap<>();
+		if(validationService.validatePattern(gateway.getGatewayEuid())) {
+			result = gatewayService.onboardGateway(gateway);	
+		} else {
+			result.put("result", "Please provide a valid gateway uid.");
+		}
 		return result;
 	}
 
@@ -56,35 +64,40 @@ public class GatewayController {
 
 	@RequestMapping(value = "/update/{gateway_euid}", method = RequestMethod.PUT)
 	public Map<String,Object> updateGateway(@PathVariable(value = "gateway_euid") String gateway_euid, @RequestBody Gateway gatewayDetails) {
-		Gateway updatedGateway = gatewayService.updateGateway(gateway_euid, gatewayDetails);
-		Map<String,Object> result = new HashMap<>();
-		if(Objects.nonNull(updatedGateway)) {
-			result.put("result", updatedGateway);
-		} else {
-			result.put("result", "Update of gateway failed");
-		}
+		Map<String,Object> result = gatewayService.updateGateway(gateway_euid, gatewayDetails);
 		return result;
 	}
 
 	@RequestMapping(value = "/delete/{gateway_euid}", method = RequestMethod.DELETE)
-	public String deleteGateway(@PathVariable(value = "gateway_euid") String gateway_euid) {
-		boolean result = false;
+	public Map<String,Object> deleteGateway(@PathVariable(value = "gateway_euid") String gateway_euid) {
+		Map<String,Object> result = new HashMap<>();
 		result = gatewayService.deleteGateway(gateway_euid);
-		if(result) {
-			return "Gateway delete successful.";
-		} else {
-			return "Gateway delete failed.";
-		}
+		return result;
 	}
 
 	@RequestMapping(value = "/approve/{gateway_euid}", method = RequestMethod.PATCH)
-	public String approveGateway(@PathVariable(value = "gateway_euid") String gateway_euid, @RequestBody Gateway gatewayDetails) {
+	public Map<String,Object> approveGateway(@PathVariable(value = "gateway_euid") String gateway_euid, @RequestBody Gateway gatewayDetails) {
+		Map<String,Object> resultMap = new HashMap<>();
 		boolean result = false;
 		result = gatewayService.approveGateway(gateway_euid, gatewayDetails);
 		if(result) {
-			return "Gateway approved.";
+			resultMap.put("result","Gateway approved");
 		} else {
-			return "Gateway approval failed.";
+			resultMap.put("result","Gateway approval failed");
 		}
+		return resultMap;
+	}
+	
+	@RequestMapping(value = "/getByUser/{user_id}", method = RequestMethod.GET)
+	public Map<String,Object> getGatewaysByUserId(@PathVariable(value = "user_id") Long user_id) {
+		Map<String,Object> result = gatewayService.getGatewaysByUserId(user_id);
+		return result;
+	}
+	
+	@RequestMapping(value = "/deleteAll", method = RequestMethod.DELETE)
+	public Map<String,Object> deleteAllGateways() {
+		Map<String,Object> result = new HashMap<>();
+		result = gatewayService.deleteAllGateways();
+		return result;
 	}
 }

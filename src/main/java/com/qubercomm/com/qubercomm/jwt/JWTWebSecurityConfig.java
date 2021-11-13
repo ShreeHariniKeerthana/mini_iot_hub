@@ -56,11 +56,9 @@ public class JWTWebSecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Override
 	public void configure(WebSecurity webSecurity) throws Exception {
-		webSecurity.ignoring().antMatchers("/authenticate/**", "/register/**", "/camunda/**/**")
+		webSecurity.ignoring().antMatchers("/authenticate/**", "/register/**", "/camunda/**/**/**")
 				.antMatchers(HttpMethod.OPTIONS, "/**")
 				.and().ignoring()
-//				.antMatchers(HttpMethod.GET, "/**"
-//				).and().ignoring()
 				.antMatchers("/h2-console/**/**");// Should not be done in Production!
 	}
 	
@@ -71,6 +69,7 @@ public class JWTWebSecurityConfig extends WebSecurityConfigurerAdapter {
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
 				.antMatchers("/rest/api/**/get/**").hasAnyAuthority("appadmin", "appuser")
 				.antMatchers("/rest/api/**").hasAuthority("appadmin")
+				.antMatchers("/camunda-welcome/**").permitAll()
 				.anyRequest()
 				.authenticated();
 
@@ -78,9 +77,5 @@ public class JWTWebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 		httpSecurity.headers().frameOptions().sameOrigin() // H2 Console Needs this setting
 				.cacheControl(); // disable caching
-	}
-
-	
-	
-	
+	}	
 }

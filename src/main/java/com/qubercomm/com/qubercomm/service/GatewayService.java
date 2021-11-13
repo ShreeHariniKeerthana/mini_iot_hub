@@ -1,15 +1,19 @@
 package com.qubercomm.service;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.qubercomm.multipledb.model.postgres.Device;
 import com.qubercomm.multipledb.model.postgres.Gateway;
 import com.qubercomm.multipledb.model.postgres.UserAccount;
+import com.qubercomm.multipledb.repository.postgres.DeviceRepository;
 import com.qubercomm.multipledb.repository.postgres.GatewayRepository;
 import com.qubercomm.multipledb.repository.postgres.UserAccountRepository;
 
@@ -20,90 +24,133 @@ public class GatewayService {
 	GatewayRepository gatewayRepository;
 
 	@Autowired
+	DeviceRepository deviceRepository;
+
+	@Autowired
 	UserAccountRepository userAccountRepository;
 
-	public String onboardGateway(Gateway gateway) {
-
-		String result = "";
+	public Map<String, Object> onboardGateway(Gateway gateway) {
+		Map<String, Object> result = new HashMap<>();
 		List<Gateway> gatewayList = getAllGateways();
 		if(gatewayList.size() > 0) {
 			for(Gateway loopGateway : gatewayList) {
 				if(loopGateway.getGatewayEuid().equalsIgnoreCase(gateway.getGatewayEuid())) {
-					return "Gateway euid provided has been already configured";
+					result.put("result", "Gateway uid provided has been already configured");
+					return result;
+				} else {
+					UserAccount optUserAccount = userAccountRepository.findByUserId(gateway.getUserId());
+					if(Objects.isNull(optUserAccount)) {
+						result.put("result", "User id associated with this gateway not found");
+						return result;
+					}
 				}
-			}
+			} 
+		}
+		gateway.setCreatedOn(new Date());
+		gateway.setUpdatedOn(new Date());
+		gateway = gatewayRepository.save(gateway);
+
+		if(Objects.nonNull(gateway)) {
+			result.put("result", "Gateway onboard successful");
 		} else {
-			UserAccount optUserAccount = userAccountRepository.findByUserId(gateway.getUserId());
-			if(Objects.isNull(optUserAccount)) {
-				return "User id associated with this gateway not found";
-			}
+			result.put("result", "Gateway onboard failed");
 		}
-			gateway.setCreatedOn(new Date());
-			gateway.setUpdatedOn(new Date());
-			gateway = gatewayRepository.save(gateway);
+		return result;
+	}
 
-			if(Objects.nonNull(gateway)) {
-				result = "Gateway onboarded successfully";
-			} else {
-				result = "Gateway onboarding failed";
-			}
-			return result;
-		}
+	public Optional<Gateway> getGateway(String gateway_euid) {
+		return gatewayRepository.findById(gateway_euid);
+	}
 
-		public Optional<Gateway> getGateway(String gateway_euid) {
-			return gatewayRepository.findById(gateway_euid);
-		}
+	public List<Gateway> getAllGateways() {
+		return gatewayRepository.findAll();
+	}
 
-		public List<Gateway> getAllGateways() {
-			return gatewayRepository.findAll();
-		}
-
-		public Gateway updateGateway(String gateway_euid, Gateway gatewayDetails) {
-			Optional<Gateway> optGateway = gatewayRepository.findById(gateway_euid);
-			Gateway gateway = null;
-			if(optGateway.isPresent()) {
-				gateway = optGateway.get();
-			}
+	public Map<String, Object> updateGateway(String gateway_euid, Gateway gatewayDetails) {
+		Optional<Gateway> optGateway = gatewayRepository.findById(gateway_euid);
+		Gateway gateway = null;
+		Map<String, Object> result = new HashMap<>();
+		if(optGateway.isPresent()) {
+			gateway = optGateway.get();
 			gateway.setApproved(gatewayDetails.isApproved());
 			gateway.setGatewayEuid(gatewayDetails.getGatewayEuid());
 			gateway.setGatewayName(gatewayDetails.getGatewayName());
 			gateway.setGatewayTags(gatewayDetails.getGatewayTags());
 			gateway.setUpdatedOn(new Date());
-			return gatewayRepository.save(gateway);
-		}
-
-		public boolean deleteGateway(String gateway_euid) {
-			List<Gateway> gatewayList = getAllGateways();
-			for(Gateway loopGateway : gatewayList) {
-				if(loopGateway.getGatewayEuid().equalsIgnoreCase(gateway_euid)) {
-					gatewayRepository.deleteById(gateway_euid);
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public boolean approveGateway(String gateway_euid, Gateway gatewayDetails) {
-			boolean result;
-			Optional<Gateway> optGateway = gatewayRepository.findById(gateway_euid);
-			Gateway existingGateway = null;
-			Gateway newGateway = null;
-			if(optGateway.isPresent()) {
-				existingGateway = optGateway.get();
-			} 
-			if(!existingGateway.isApproved() && gatewayDetails.isApproved()) {
-				existingGateway.setApproved(gatewayDetails.isApproved());
-				newGateway = gatewayRepository.save(existingGateway);
-			}
-
-			if(Objects.nonNull(newGateway)) {
-				result = true;
+			Gateway updatedGateway = gatewayRepository.save(gateway);
+			if(Objects.nonNull(updatedGateway)) {
+				result.put("result", updatedGateway);
 			} else {
-				result = false;
+				result.put("result", "Gateway update failed");
 			}
-			return result;
+		} else {
+			result.put("result", "No device found with the uid specified");
+		}
+		return result;
+	}
 
+	public Map<String, Object> deleteGateway(String gateway_euid) {
+		List<Gateway> gatewayList = getAllGateways();
+		Map<String, Object> result = new HashMap<>();
+		for(Gateway loopGateway : gatewayList) {
+			if(loopGateway.getGatewayEuid().equalsIgnoreCase(gateway_euid)) {
+				List<Device> deviceList = deviceRepository.findByGatewayEuid(gateway_euid);
+				if(Objects.nonNull(deviceList)) {
+					gatewayRepository.deleteById(gateway_euid);
+					result.put("result", "Gateway delete successful");
+				} else {
+					result.put("result", "There are devices configured under this gateway.Delete the devices before deleting the gateway");
+				}
+			} else {
+				result.put("result", "No gateway found with the uid specified");
+			}
+		}
+		return result;
+	}
+
+	public boolean approveGateway(String gateway_euid, Gateway gatewayDetails) {
+		boolean result;
+		Optional<Gateway> optGateway = gatewayRepository.findById(gateway_euid);
+		Gateway existingGateway = null;
+		Gateway newGateway = null;
+		if(optGateway.isPresent()) {
+			existingGateway = optGateway.get();
+		} 
+		if(!existingGateway.isApproved() && gatewayDetails.isApproved()) {
+			existingGateway.setApproved(gatewayDetails.isApproved());
+			newGateway = gatewayRepository.save(existingGateway);
 		}
 
+		if(Objects.nonNull(newGateway)) {
+			result = true;
+		} else {
+			result = false;
+		}
+		return result;
 
 	}
+
+	public Map<String, Object> getGatewaysByUserId(Long user_id){
+		List<Gateway> gatewayList = gatewayRepository.findByUserId(user_id);
+		Map<String, Object> result = new HashMap<>();
+		if(Objects.nonNull(gatewayList)) {
+			result.put("result", gatewayList);
+		} else {
+			result.put("result", "No gateways found for user id specified");
+		}
+		return result;
+	}
+
+	public Map<String, Object> deleteAllGateways() {
+		List<Gateway> gatewayList = getAllGateways();
+		Map<String, Object> result = new HashMap<>();
+		if(Objects.nonNull(gatewayList)) {
+			gatewayRepository.deleteAll();
+			result.put("result", "All the gateways deleted successfully");
+		} else {
+			result.put("result", "No gateways found to be deleted");
+		}
+		return result;
+	}
+
+}
