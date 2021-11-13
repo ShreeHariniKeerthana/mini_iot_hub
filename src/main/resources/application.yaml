@@ -1,0 +1,8 @@
+# Server Configuration
+
+camunda.bpm:
+  admin-user:
+    id: demo
+    password: demo
+  metrics:
+    db-reporter-activate: false
