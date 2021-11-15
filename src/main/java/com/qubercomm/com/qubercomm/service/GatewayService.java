@@ -95,16 +95,16 @@ public class GatewayService {
 		for(Gateway loopGateway : gatewayList) {
 			if(loopGateway.getGatewayEuid().equalsIgnoreCase(gateway_euid)) {
 				List<Device> deviceList = deviceRepository.findByGatewayEuid(gateway_euid);
-				if(Objects.nonNull(deviceList)) {
+				if(deviceList.isEmpty()) {
 					gatewayRepository.deleteById(gateway_euid);
 					result.put("result", "Gateway delete successful");
 				} else {
 					result.put("result", "There are devices configured under this gateway.Delete the devices before deleting the gateway");
 				}
-			} else {
-				result.put("result", "No gateway found with the uid specified");
+				return result;
 			}
 		}
+		result.put("result", "No gateway found with the uid specified");
 		return result;
 	}
 
@@ -133,10 +133,10 @@ public class GatewayService {
 	public Map<String, Object> getGatewaysByUserId(Long user_id){
 		List<Gateway> gatewayList = gatewayRepository.findByUserId(user_id);
 		Map<String, Object> result = new HashMap<>();
-		if(Objects.nonNull(gatewayList)) {
-			result.put("result", gatewayList);
-		} else {
+		if(gatewayList.isEmpty()) {
 			result.put("result", "No gateways found for user id specified");
+		} else {
+			result.put("result", gatewayList);
 		}
 		return result;
 	}
@@ -144,11 +144,11 @@ public class GatewayService {
 	public Map<String, Object> deleteAllGateways() {
 		List<Gateway> gatewayList = getAllGateways();
 		Map<String, Object> result = new HashMap<>();
-		if(Objects.nonNull(gatewayList)) {
+		if(gatewayList.isEmpty()) {
 			gatewayRepository.deleteAll();
-			result.put("result", "All the gateways deleted successfully");
-		} else {
 			result.put("result", "No gateways found to be deleted");
+		} else {
+			result.put("result", "All the gateways deleted successfully");
 		}
 		return result;
 	}

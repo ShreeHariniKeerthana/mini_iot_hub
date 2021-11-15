@@ -55,10 +55,10 @@ public class DeviceController {
 	public Map<String,Object> getAllDevices() {
 		List<Device> deviceList = deviceService.getAllDevices();
 		Map<String,Object> result = new HashMap<>();
-		if(Objects.nonNull(deviceList)) {
-			result.put("result", deviceList);
-		} else {
+		if(deviceList.isEmpty()) {
 			result.put("result", "No devices found");
+		} else {
+			result.put("result", deviceList);
 		}
 		return result;
 	}

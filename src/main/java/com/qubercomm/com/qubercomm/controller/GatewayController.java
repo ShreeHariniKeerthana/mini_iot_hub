@@ -3,7 +3,6 @@ package com.qubercomm.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,10 +53,10 @@ public class GatewayController {
 	public Map<String,Object> getAllGateways() {
 		List<Gateway> gatewayList = gatewayService.getAllGateways();
 		Map<String,Object> result = new HashMap<>();
-		if(Objects.nonNull(gatewayList)) {
-			result.put("result", gatewayList);
-		} else {
+		if(gatewayList.isEmpty()) {
 			result.put("result", "No gateways found");
+		} else {
+			result.put("result", gatewayList);
 		}
 		return result;
 	}

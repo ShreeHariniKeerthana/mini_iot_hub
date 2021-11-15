@@ -40,15 +40,17 @@ public class DeviceService {
 					return result;
 				} 
 			}
-		} else {
-			Gateway optGateway = gatewayRepository.findByGatewayEuid(device.getGatewayEuid());
-			if(Objects.isNull(optGateway)) {
-				result.put("result","Gateway id associated with this device not found");
-			} else if(optGateway.isApproved() == false) {
-				result.put("result","Gateway id associated with this device not approved");
-			}
+		} 
+		Gateway optGateway = gatewayRepository.findByGatewayEuid(device.getGatewayEuid());
+		if(Objects.isNull(optGateway)) {
+			result.put("result","Gateway id associated with this device not found");
+			return result;
+		} else if(optGateway.isApproved() == false) {
+			result.put("result","Gateway id associated with this device not approved");
 			return result;
 		}
+		
+
 		device.setCreatedOn(new Date());
 		device.setUpdatedOn(new Date());
 		JSONObject properties = device.getProperties();
@@ -174,10 +176,10 @@ public class DeviceService {
 	public Map<String, Object> getDevicesByGatewayId(String gateway_euid){
 		List<Device> deviceList = deviceRepository.findByGatewayEuid(gateway_euid);
 		Map<String, Object> result = new HashMap<>();
-		if(Objects.nonNull(deviceList)) {
-			result.put("result", deviceList);
-		} else {
+		if(deviceList.isEmpty()) {
 			result.put("result", "No devices found for gateway id specified");
+		} else {
+			result.put("result", deviceList);
 		}
 		return result;
 	}
@@ -185,11 +187,12 @@ public class DeviceService {
 	public Map<String, Object> deleteAllDevices() {
 		List<Device> deviceList = getAllDevices();
 		Map<String, Object> result = new HashMap<>();
-		if(Objects.nonNull(deviceList)) {
+		if(deviceList.isEmpty()) {
+			result.put("result", "No devices found to be deleted");
+		} else {
 			deviceRepository.deleteAll();
 			result.put("result", "All the devices deleted successfully");
-		} else {
-			result.put("result", "No devices found to be deleted");
+			
 		}
 		return result;
 	}
