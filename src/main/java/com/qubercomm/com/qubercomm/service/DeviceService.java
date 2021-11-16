@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import com.qubercomm.multipledb.model.postgres.Device;
 import com.qubercomm.multipledb.model.postgres.Gateway;
@@ -176,7 +177,7 @@ public class DeviceService {
 	public Map<String, Object> getDevicesByGatewayId(String gateway_euid){
 		List<Device> deviceList = deviceRepository.findByGatewayEuid(gateway_euid);
 		Map<String, Object> result = new HashMap<>();
-		if(deviceList.isEmpty()) {
+		if(CollectionUtils.isEmpty(deviceList)) {
 			result.put("result", "No devices found for gateway id specified");
 		} else {
 			result.put("result", deviceList);
@@ -187,7 +188,7 @@ public class DeviceService {
 	public Map<String, Object> deleteAllDevices() {
 		List<Device> deviceList = getAllDevices();
 		Map<String, Object> result = new HashMap<>();
-		if(deviceList.isEmpty()) {
+		if(CollectionUtils.isEmpty(deviceList)) {
 			result.put("result", "No devices found to be deleted");
 		} else {
 			deviceRepository.deleteAll();

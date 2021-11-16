@@ -3,11 +3,11 @@ package com.qubercomm.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,7 +55,7 @@ public class DeviceController {
 	public Map<String,Object> getAllDevices() {
 		List<Device> deviceList = deviceService.getAllDevices();
 		Map<String,Object> result = new HashMap<>();
-		if(deviceList.isEmpty()) {
+		if(CollectionUtils.isEmpty(deviceList)) {
 			result.put("result", "No devices found");
 		} else {
 			result.put("result", deviceList);

@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import com.qubercomm.multipledb.model.postgres.Device;
 import com.qubercomm.multipledb.model.postgres.Gateway;
@@ -95,7 +96,7 @@ public class GatewayService {
 		for(Gateway loopGateway : gatewayList) {
 			if(loopGateway.getGatewayEuid().equalsIgnoreCase(gateway_euid)) {
 				List<Device> deviceList = deviceRepository.findByGatewayEuid(gateway_euid);
-				if(deviceList.isEmpty()) {
+				if(CollectionUtils.isEmpty(deviceList)) {
 					gatewayRepository.deleteById(gateway_euid);
 					result.put("result", "Gateway delete successful");
 				} else {
@@ -133,7 +134,7 @@ public class GatewayService {
 	public Map<String, Object> getGatewaysByUserId(Long user_id){
 		List<Gateway> gatewayList = gatewayRepository.findByUserId(user_id);
 		Map<String, Object> result = new HashMap<>();
-		if(gatewayList.isEmpty()) {
+		if(CollectionUtils.isEmpty(gatewayList)) {
 			result.put("result", "No gateways found for user id specified");
 		} else {
 			result.put("result", gatewayList);
@@ -144,7 +145,7 @@ public class GatewayService {
 	public Map<String, Object> deleteAllGateways() {
 		List<Gateway> gatewayList = getAllGateways();
 		Map<String, Object> result = new HashMap<>();
-		if(gatewayList.isEmpty()) {
+		if(CollectionUtils.isEmpty(gatewayList)) {
 			gatewayRepository.deleteAll();
 			result.put("result", "No gateways found to be deleted");
 		} else {
