@@ -12,9 +12,9 @@ import org.hibernate.envers.Audited;
 
 @Entity
 @Audited
-@Table(name="UserSession")
+@Table(name = "UserSession")
 public class UserSession {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -27,7 +27,6 @@ public class UserSession {
 	private String role;
 	
 	private String password;
-
 
 	public Long getId() {
 		return id;

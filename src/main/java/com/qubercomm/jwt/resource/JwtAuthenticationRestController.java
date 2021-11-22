@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -60,6 +61,7 @@ public class JwtAuthenticationRestController {
 	public ResponseEntity<?> createAuthenticationToken(HttpServletRequest request, @RequestBody JwtTokenRequest authenticationRequest, @PathVariable(value = "process_id") String process_id)
 			throws AuthenticationException {
 
+		JSONObject responseJson = new JSONObject();
 		String token = null;
 		
 		try {
@@ -79,7 +81,7 @@ public class JwtAuthenticationRestController {
 				
 			userAccountService.initiateMessage(process_id, "User Authenticated");
 		} catch(Exception e) {
-			return ResponseEntity.badRequest().body("An error occurred while authenticating the user. " + e.getMessage());
+			return ResponseEntity.badRequest().body(new JwtTokenResponse(e.getMessage()));
 		}
 		
 		return ResponseEntity.ok(new JwtTokenResponse(token));
@@ -89,7 +91,7 @@ public class JwtAuthenticationRestController {
 	public ResponseEntity<?> saveUser(@RequestBody UserAccount user,  @PathVariable(value = "process_id") String process_id) throws Exception {
 		
 		// Check User is registered or not
-		
+		JSONObject responseJson = new JSONObject();
 		try {
 			if(!userSessionService.isUserRegistered(user.getUsername())) {
 				userSessionService.save(user);
@@ -97,11 +99,12 @@ public class JwtAuthenticationRestController {
 				userAccountService.initiateMessage(process_id, "User Registered");
 				return ResponseEntity.ok(user);
 			} else {
-				return ResponseEntity.ok("User Already Registered");
+				return (ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JwtTokenResponse("User Already Registered")));
+
 			}
 			
 		} catch (Exception e) {
-			return ResponseEntity.badRequest().body("An error occurred while registering the user. " + e.getMessage());
+			return (ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JwtTokenResponse(e.getMessage())));
 		}
 	
 	}
