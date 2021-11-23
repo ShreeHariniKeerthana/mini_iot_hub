@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import com.qubercomm.multipledb.model.postgres.Device;
 import com.qubercomm.multipledb.model.postgres.Gateway;
@@ -30,28 +31,40 @@ public class DeviceService {
 	@Autowired
 	GatewayRepository gatewayRepository;
 
-	public String onboardDevice(Device device) {
-		String result = "";
+	public Map<String, Object> onboardDevice(Device device) {
 		List<Device> deviceList = getAllDevices();
+		Map<String, Object> result = new HashMap<>();
 		if(deviceList.size() > 0){
 			for(Device loopDevice : deviceList) {
 				if(loopDevice.getDeviceEuid().equalsIgnoreCase(device.getDeviceEuid())) {
-					return "Device euid provided has been already configured";
+					result.put("result","Device uid provided has been already configured");
+					return result;
 				} 
 			}
-		} else {
-			Gateway optGateway = gatewayRepository.findByGatewayEuid(device.getGatewayEuid());
-			if(Objects.isNull(optGateway) || optGateway.isApproved() == false) {
-				return "Gateway id associated with this device not found/ not approved";
-			}
+		} 
+		Gateway optGateway = gatewayRepository.findByGatewayEuid(device.getGatewayEuid());
+		if(Objects.isNull(optGateway)) {
+			result.put("result","Gateway id associated with this device not found");
+			return result;
+		} else if(optGateway.isApproved() == false) {
+			result.put("result","Gateway id associated with this device not approved");
+			return result;
 		}
+		
+
 		device.setCreatedOn(new Date());
 		device.setUpdatedOn(new Date());
+		JSONObject properties = device.getProperties();
+		JSONObject disableProperties = new JSONObject();
+		if(properties.get("power").equals(POWER_OFF)) {
+			disableProperties.put("power", properties.get("power"));
+		}
+		device.setProperties(disableProperties);
 		device = deviceRepository.save(device);	
 		if(Objects.nonNull(device)) {
-			result = "Device onboarded successfully";
+			result.put("result", "Device onboard successful");
 		} else {
-			result = "Device onboarding failed";
+			result.put("result", "Device onboard failed");
 		}
 		return result;
 	}
@@ -64,30 +77,43 @@ public class DeviceService {
 		return deviceRepository.findAll();
 	}
 
-	public Device updateDevice(String device_euid, Device deviceDetails) {
+	public Map<String, Object> updateDevice(String device_euid, Device deviceDetails) {
 		Optional<Device> optDevice = deviceRepository.findById(device_euid);
 		Device device = null;
+		Map<String, Object> result = new HashMap<>();
 		if(optDevice.isPresent()) {
 			device = optDevice.get();
+			device.setEnabled(deviceDetails.isEnabled());
+			device.setDeviceType(deviceDetails.getDeviceType());
+			device.setDeviceEuid(deviceDetails.getDeviceEuid());
+			device.setDeviceName(deviceDetails.getDeviceName());
+			device.setDeviceTags(deviceDetails.getDeviceTags());
+			device.setUpdatedOn(new Date());
+			Device updatedDevice = deviceRepository.save(device);
+			if(Objects.nonNull(updatedDevice)) {
+				result.put("result", updatedDevice);
+			} else {
+				result.put("result", "Device update failed");
+			}
+		} else {
+			result.put("result", "No device found with the uid specified");
 		}
-		device.setEnabled(deviceDetails.isEnabled());
-		device.setDeviceType(deviceDetails.getDeviceType());
-		device.setDeviceEuid(deviceDetails.getDeviceEuid());
-		device.setDeviceName(deviceDetails.getDeviceName());
-		device.setDeviceTags(deviceDetails.getDeviceTags());
-		device.setUpdatedOn(new Date());
-		return deviceRepository.save(device);
+		return result;
 	}
 
-	public boolean deleteDevice(String device_euid) {
+
+	public Map<String, Object> deleteDevice(String device_euid) {
 		List<Device> deviceList = getAllDevices();
+		Map<String, Object> result = new HashMap<>();
 		for(Device loopDevice : deviceList) {
 			if(loopDevice.getDeviceEuid().equalsIgnoreCase(device_euid)) {
 				deviceRepository.deleteById(device_euid);
-				return true;
+				result.put("result", "Device delete successful");
+			} else {
+				result.put("result", "No device found with the uid specified");
 			}
 		}
-		return false;
+		return result;
 
 	}
 
@@ -111,19 +137,19 @@ public class DeviceService {
 		if(Objects.nonNull(newProperties) && device.isEnabled()) {
 			if(newProperties.get("power").equals(POWER_ON)) {
 				switch(deviceType) {
-					case "bulb":{
-						properties.put("color", newProperties.get("color"));
-						properties.put("brightness", newProperties.get("brightness"));
-						break;
-					}	
-					case "speaker":{
-						properties.put("volume", newProperties.get("volume	"));
-						break;
-					}	
-					case "door":{
-						properties.put("action", newProperties.get("action"));
-						break;
-					}
+				case "bulb":{
+					properties.put("color", newProperties.get("color"));
+					properties.put("brightness", newProperties.get("brightness"));
+					break;
+				}	
+				case "speaker":{
+					properties.put("volume", newProperties.get("volume	"));
+					break;
+				}	
+				case "door":{
+					properties.put("action", newProperties.get("action"));
+					break;
+				}
 				}
 				properties.put("power", newProperties.get("power"));
 				device.setProperties(properties);
@@ -138,13 +164,37 @@ public class DeviceService {
 			result.put("result","Device properties update failed because device is not enabled");
 			return result;
 		}
-		
+
 		if(Objects.nonNull(updatedDevice)) {
 			result.put("result", updatedDevice);
 		} else {
-			result.put("result", "Update of device properties failed");
+			result.put("result", "Device properties update failed");
 		}
 		return result;
 
+	}
+
+	public Map<String, Object> getDevicesByGatewayId(String gateway_euid){
+		List<Device> deviceList = deviceRepository.findByGatewayEuid(gateway_euid);
+		Map<String, Object> result = new HashMap<>();
+		if(CollectionUtils.isEmpty(deviceList)) {
+			result.put("result", "No devices found for gateway id specified");
+		} else {
+			result.put("result", deviceList);
+		}
+		return result;
+	}
+
+	public Map<String, Object> deleteAllDevices() {
+		List<Device> deviceList = getAllDevices();
+		Map<String, Object> result = new HashMap<>();
+		if(CollectionUtils.isEmpty(deviceList)) {
+			result.put("result", "No devices found to be deleted");
+		} else {
+			deviceRepository.deleteAll();
+			result.put("result", "All the devices deleted successfully");
+			
+		}
+		return result;
 	}
 }

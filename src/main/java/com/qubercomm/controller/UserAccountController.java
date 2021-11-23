@@ -1,5 +1,9 @@
 package com.qubercomm.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,9 +22,15 @@ public class UserAccountController {
 	private UserAccountService userAccountService;
 	
 	@RequestMapping(value = "/update/{username}", method = RequestMethod.PATCH)
-	public UserAccount updatePassword(@PathVariable(value = "username") String username, @RequestBody UserAccount userDetails) {
-		return userAccountService.updatePassword(username, userDetails);
-		
+	public Map<String, Object> updatePassword(@PathVariable(value = "username") String username, @RequestBody UserAccount userDetails) {
+		UserAccount updatedAccount = userAccountService.updatePassword(username, userDetails);
+		Map<String, Object> result = new HashMap<>();
+		if(Objects.nonNull(updatedAccount)) {
+			result.put("result", "Password update successful");
+		} else {
+			result.put("result", "Password update failed");
+		}
+		return result;
 	}
 
 }

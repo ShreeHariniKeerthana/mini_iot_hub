@@ -1,7 +1,6 @@
 package com.qubercomm.jwt;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,26 +11,16 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.qubercomm.multipledb.model.h2.UserSession;
-import com.qubercomm.multipledb.model.postgres.UserAccount;
 import com.qubercomm.multipledb.repository.h2.UserSessionRepository;
-import com.qubercomm.multipledb.repository.postgres.UserAccountRepository;
 
 @Service
 public class JwtInMemoryUserDetailsService implements UserDetailsService {
 	
 	@Autowired
-	private UserAccountRepository userAccountRepository;
-	
-	@Autowired
 	private UserSessionRepository userSessionRepository;
-	
-	@Autowired
-	private PasswordEncoder bcryptEncoder;
-
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

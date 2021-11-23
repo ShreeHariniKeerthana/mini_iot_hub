@@ -3,11 +3,11 @@ package com.qubercomm.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.qubercomm.multipledb.model.postgres.Device;
 import com.qubercomm.service.DeviceService;
+import com.qubercomm.service.ValidationService;
 
 @RestController
 @RequestMapping("/rest/api/device/")
@@ -24,10 +25,17 @@ public class DeviceController {
 	@Autowired
 	private DeviceService deviceService;
 	
+	@Autowired
+	private ValidationService validationService;
+	
 	@RequestMapping(value = "/create", method = RequestMethod.POST)
-	public String onboardDevice(@RequestBody Device device) { 
-		String result = "";
-		result = deviceService.onboardDevice(device);		
+	public Map<String, Object> onboardDevice(@RequestBody Device device) { 
+		Map<String, Object> result = new HashMap<>();
+		if(validationService.validatePattern(device.getDeviceEuid())) {
+			result = deviceService.onboardDevice(device);		
+		} else {
+			result.put("result", "Please provide a valid device uid");
+		}
 		return result;
 	}
 	
@@ -47,41 +55,44 @@ public class DeviceController {
 	public Map<String,Object> getAllDevices() {
 		List<Device> deviceList = deviceService.getAllDevices();
 		Map<String,Object> result = new HashMap<>();
-		if(Objects.nonNull(deviceList)) {
-			result.put("result", deviceList);
-		} else {
+		if(CollectionUtils.isEmpty(deviceList)) {
 			result.put("result", "No devices found");
+		} else {
+			result.put("result", deviceList);
 		}
 		return result;
 	}
 	
 	@RequestMapping(value = "/update/{device_euid}", method = RequestMethod.PUT)
 	public Map<String, Object> updateDevice(@PathVariable(value = "device_euid") String device_euid, @RequestBody Device deviceDetails) {
-		Device updatedDevice = deviceService.updateDevice(device_euid, deviceDetails);	
-		Map<String,Object> result = new HashMap<>();
-		if(Objects.nonNull(updatedDevice)) {
-			result.put("result", updatedDevice);
-		} else {
-			result.put("result", "Update of device failed");
-		}
+		Map<String,Object> result = deviceService.updateDevice(device_euid, deviceDetails);	
 		return result;
 	}
 	
 	@RequestMapping(value = "/delete/{device_euid}", method = RequestMethod.DELETE)
-	public String deleteDevice(@PathVariable(value = "device_euid") String device_euid) {
-		boolean result = false;
+	public Map<String,Object> deleteDevice(@PathVariable(value = "device_euid") String device_euid) {
+		Map<String,Object> result = new HashMap<>();
 		result = deviceService.deleteDevice(device_euid);
-		if(result) {
-			return "Device delete successful.";
-		} else {
-			return "Device delete failed.";
-		}
+		return result;
 	}
 	
 	@RequestMapping(value = "/updateProperties/{device_euid}", method = RequestMethod.PATCH)
 	public Map<String,Object> updateProperties(@PathVariable(value = "device_euid") String device_euid, @RequestBody JSONObject properties) {
 		Map<String,Object> result = new HashMap<>();
 		result = deviceService.updateProperties(device_euid, properties);
+		return result;
+	}
+	
+	@RequestMapping(value = "/getByGateway/{gateway_euid}", method = RequestMethod.GET)
+	public Map<String,Object> getDevicesByGatewayId(@PathVariable(value = "gateway_euid") String gateway_euid) {
+		Map<String,Object> result = deviceService.getDevicesByGatewayId(gateway_euid);
+		return result;
+	}
+	
+	@RequestMapping(value = "/deleteAll", method = RequestMethod.DELETE)
+	public Map<String,Object> deleteAllDevices() {
+		Map<String,Object> result = new HashMap<>();
+		result = deviceService.deleteAllDevices();
 		return result;
 	}
 }

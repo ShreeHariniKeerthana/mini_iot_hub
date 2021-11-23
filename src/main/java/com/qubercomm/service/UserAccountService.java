@@ -2,14 +2,12 @@ package com.qubercomm.service;
 
 import java.util.Date;
 
-import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.RuntimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.qubercomm.multipledb.model.h2.UserSession;
 import com.qubercomm.multipledb.model.postgres.UserAccount;
 import com.qubercomm.multipledb.repository.h2.UserSessionRepository;
 import com.qubercomm.multipledb.repository.postgres.UserAccountRepository;

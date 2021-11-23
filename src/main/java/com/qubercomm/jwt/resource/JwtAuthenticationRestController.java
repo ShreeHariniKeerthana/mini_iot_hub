@@ -1,6 +1,8 @@
 package com.qubercomm.jwt.resource;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,9 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.qubercomm.jwt.JwtInMemoryUserDetailsService;
 import com.qubercomm.jwt.JwtTokenUtil;
-import com.qubercomm.jwt.JwtUserDetails;
 import com.qubercomm.multipledb.model.postgres.UserAccount;
-import com.qubercomm.multipledb.repository.h2.UserSessionRepository;
 import com.qubercomm.service.UserAccountService;
 import com.qubercomm.service.UserSessionService;
 
@@ -97,6 +97,7 @@ public class JwtAuthenticationRestController {
 				userSessionService.save(user);
 				user = userAccountService.save(user);
 				userAccountService.initiateMessage(process_id, "User Registered");
+				//result.put("result", user);
 				return ResponseEntity.ok(user);
 			} else {
 				return (ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new JwtTokenResponse("User Already Registered")));
